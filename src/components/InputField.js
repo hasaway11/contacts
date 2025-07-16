@@ -1,4 +1,6 @@
-function InputField({ name, label, type, value, onChange, check, message }) {
+import { forwardRef } from "react";
+
+const InputField=forwardRef(({name, label, type, value, onChange, check, message}, ref) =>{
   return (
     <div className="mb-3 mt-3">
       <label htmlFor={name} className="form-label">{label}:</label>
@@ -6,6 +8,6 @@ function InputField({ name, label, type, value, onChange, check, message }) {
       {message!=='' && <span style={{color:'red'}}>{message}</span>}
     </div>
   )
-}
+});
 
 export default InputField;

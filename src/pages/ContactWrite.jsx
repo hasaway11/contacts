@@ -1,67 +1,49 @@
-import { useNavigate } from "react-router-dom";
-import useInput from '../hooks/useInput';
-import useProfile from '../hooks/useProfile';
-import ProfileField from '../components/ProfileField';
-import InputField from '../components/InputField';
-import { create, createPhoto } from "../utils/api";
-import { AsyncStatus } from "../utils/constants";
-import { useState } from "react";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { Alert } from "react-bootstrap";
+import { forwardRef, useRef, useState } from "react";
+
+const FormField=forwardRef(({label, type, name, check, message}, ref)=>{
+  console.log(`${name}`)
+  return (
+    <div className="mb-3 mt-3">
+      <label className="form-label">{label}:</label>
+      <input type={type} className="form-control" name={name} onBlur={check} ref={ref}/>
+      {message!=='' && <span style={{color:'red'}}>{message}</span>}
+    </div>
+  )
+});
+
+function useFormInput(ref) {
+  const [message, setMessage] = useState('');
+  const check=()=>{
+    const value = ref.current?.value || '';
+    if(value=='') {
+      setMessage('필수입력입니다');
+      return false;
+    }
+    return true;
+  }
+  return { message, check};
+}
+
 
 function ContactWrite() {
-  const navigate = useNavigate();
-  const [status, setStatus] = useState(AsyncStatus.IDLE);
-  const [error, setError] = useState(null);
+  const nameRef = useRef();
+  const emailRef = useRef();
 
-  const nameInput = useInput();
-  const telInput = useInput();
-  const addressInput = useInput();
-  const { profile, previewUrl, handleFileChange } = useProfile();
+  const vNameInput = useFormInput(nameRef);
+  const vEmailInput = useFormInput(emailRef);
 
-  const handleCreate = async () => {
-    if(status === AsyncStatus.SUBMITTING) return;
-    setStatus(AsyncStatus.SUBMITTING);
-
-    const r1 = nameInput.check();
-    const r2 = telInput.check();
-    const r3 = addressInput.check();
-
-    if (!(r1&&r2&&r3)) 
-      return;
-
-    try {
-      const obj = { name: nameInput.value, address: addressInput.value, tel: telInput.value };
-      const response = await create(obj)
-      const newNo = response.data.no;
-
-      if (profile) {
-        const formData = new FormData();
-        formData.append('photo', profile);
-        await createPhoto(formData, newNo);
-      }
-      navigate(`/read?no=${newNo}`);
-      return;
-    } catch (error) {
-      setStatus(AsyncStatus.FAIL);
-      setError(error.message);
-    }
-  };
-
-  if(status===AsyncStatus.SUBMITTING) return <LoadingSpinner />
+  const handleSubmit=()=>{
+    const r1 = vNameInput.check();
+    const r2 = vEmailInput.check();
+    if(r1&&r2) 
+      alert("submit합니다")
+  }
 
   return (
     <>
-      {status===AsyncStatus.FAIL && <Alert variant='danger'>{error}</Alert>}
-      <ProfileField name="profile" label="프로필" alt="미리보기" previewUrl={previewUrl} onChange={handleFileChange} />
-      <InputField name="name" label="이름" type="text" {...nameInput} />
-      <InputField name="address" label="주소" type="text" {...addressInput} />
-      <InputField name="tel" label="연락처" type="text" {...telInput} />
-      <div className="d-grid gap-3">
-        <button type="button" id="add" className="btn btn-outline-primary btn-block" onClick={handleCreate}>
-          추가
-        </button>
-      </div>
+      <FormField label='이름' type='text' name='name' check={vNameInput.check} message={vNameInput.message} ref={nameRef} />
+      <FormField label='이메일' type='email' name='email' check={vEmailInput.check} message={vEmailInput.message} ref={emailRef} />
+      <button onClick={handleSubmit}>보내볼까요</button>
     </>
   )
 }
