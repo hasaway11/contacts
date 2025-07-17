@@ -1,49 +1,82 @@
-import { forwardRef, useRef, useState } from "react";
+import { useState } from "react"
+import { AsyncStatus } from "../utils/constants";
+import LoadingSpinner from "../components/LoadingSpinner";
 
-const FormField=forwardRef(({label, type, name, check, message}, ref)=>{
-  console.log(`${name}`)
-  return (
-    <div className="mb-3 mt-3">
-      <label className="form-label">{label}:</label>
-      <input type={type} className="form-control" name={name} onBlur={check} ref={ref}/>
-      {message!=='' && <span style={{color:'red'}}>{message}</span>}
-    </div>
-  )
-});
+const titles = {name:'이름은', address:'주소는', tel:'연락처는'};
 
-function useFormInput(ref) {
-  const [message, setMessage] = useState('');
-  const check=()=>{
-    const value = ref.current?.value || '';
-    if(value=='') {
-      setMessage('필수입력입니다');
-      return false;
-    }
-    return true;
-  }
-  return { message, check};
-}
-
-
+// 입력하지 않은 경우만 처리
 function ContactWrite() {
-  const nameRef = useRef();
-  const emailRef = useRef();
+  const [data, setData] = useState({name:'', address:'', tel:''});
+  const [error, setError] = useState({name:'', address:'', tel:''});
+  const [preview, setPreview] = useState(null);
+  const [status, setStatus] = useState(AsyncStatus.IDLE);
 
-  const vNameInput = useFormInput(nameRef);
-  const vEmailInput = useFormInput(emailRef);
+  const handleChange=(e)=>{
+    const {name, value}=e.target;
+    setData(prev=>({...prev, [name]:value}));
+  };
 
   const handleSubmit=()=>{
-    const r1 = vNameInput.check();
-    const r2 = vEmailInput.check();
-    if(r1&&r2) 
-      alert("submit합니다")
+    setError({name:'', address:'', tel:''});
+
+    // setError는 비동기. setError한 다음 바로 이어서 error에 접근하면 아직 변경이 안되어 있다
+    // 그래서 에러메시지를 담은 new객체를 만들어 setError하고, new객체로 에러 여부를 확인
+    const newError = { name: '', address: '', tel: '' };
+    Object.keys(data).forEach(key=>{
+      if(data[key]==='') 
+        newError[key]=`${titles[key]} 필수입력입니다`
+    });
+    setError(newError);
+
+    const isErrorExist = Object.values(newError).some(value=>value!=='');
+    if(isErrorExist) {
+      setStatus(AsyncStatus.IDLE);
+      return;
+    }
+    alert("서버로 submit합니다");
+  };
+
+  const handleBlur=(e)=>{
+    const key = e.target.name;
+    setError(prev=>({...prev, [key]:''}));
+    if(data[key]==='')
+      setError(prev=>({...prev,[key]:`${titles[key]} 필수입력입니다`}));
+  };
+
+  const handlePhotoChange=(e)=>{
+    const src = URL.createObjectURL(e.target.files[0]);
+    setPreview(src);
   }
+
+  const {name, address, tel} = data;
+
+  if(status===AsyncStatus.SUBMITTING) return <LoadingSpinner />
 
   return (
     <>
-      <FormField label='이름' type='text' name='name' check={vNameInput.check} message={vNameInput.message} ref={nameRef} />
-      <FormField label='이메일' type='email' name='email' check={vEmailInput.check} message={vEmailInput.message} ref={emailRef} />
-      <button onClick={handleSubmit}>보내볼까요</button>
+      {preview && <img src={preview} style={{ height: '200px', objectFit: 'cover' }} alt='프로필' />}
+      <div className="mb-3 mt-3">
+        <label htmlFor={name} className="form-label">프로필:</label>
+        <input type="file" className="form-control" name='photo' onChange={handlePhotoChange} />
+      </div>
+      <div className="mt-3 mb-3">
+        <label className="form-label">이름:</label>
+        <input type="text" className="form-control" name="name" onChange={handleChange} value={name} onBlur={handleBlur}/>
+        {error.name && <span style={{color:'red', fontSize:'0.8em'}}>{error.name}</span>}
+      </div>
+      <div className="mt-3 mb-3">
+        <label className="form-label">연락처:</label>
+        <input type="text" className="form-control" name="tel" onChange={handleChange} value={tel} onBlur={handleBlur} />
+        {error.tel && <span style={{color:'red', fontSize:'0.8em'}}>{error.tel}</span>}
+      </div>
+      <div className="mt-3 mb-3">
+        <label className="form-label">주소:</label>
+        <input type="text" className="form-control" name="address" onChange={handleChange} value={address} onBlur={handleBlur} />
+        {error.address && <span style={{color:'red', fontSize:'0.8em'}}>{error.address}</span>}
+      </div>
+      <div className="d-grid gap-3">
+        <button type="button" className="btn btn-outline-primary btn-block" onClick={handleSubmit}>추가</button>
+      </div>
     </>
   )
 }

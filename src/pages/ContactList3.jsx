@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom"
-import { readAll } from "../utils/api";
 import { Alert } from "react-bootstrap";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Paginations from "../components/Paginations";
+import useSWR from "swr";
+import { readAll } from "../utils/api";
 
 function Contact({contact}) {
   return (
@@ -18,31 +18,15 @@ function Contact({contact}) {
   )
 }
 
-function ContactList() {
+function ContactList3() {
   const [searchParams] = useSearchParams();
   const pagenoInput = searchParams.get('pageno');
   const pageno = isNaN(parseInt(pagenoInput))? 1 : parseInt(pagenoInput);
   const PAGE_SIZE = 10;
   const BLOCK_SIZE = 5;
 
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-  const [isLoading, setLoading] = useState(false);
-  
-  useEffect(()=>{
-    setLoading(true);
-    async function fetch() {
-      try {
-        const response = await readAll(pageno, PAGE_SIZE);
-        setData(response.data);
-      } catch(err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetch();
-  }, [pageno]);
+  // swr을 이용한 데이터 fetching
+  const {data, error, isLoading } = useSWR(['posts', pageno], ()=>readAll(pageno), { revalidateOnFocus: false, shouldRetryOnError: false} );
 
   if(!data) return;
   if(isLoading) return <LoadingSpinner />
@@ -60,7 +44,7 @@ function ContactList() {
         </thead>
         <tbody>
         {
-          contacts.map((contact, idx)=><Contact key={idx} contact={contact} />)
+          contacts.map((contact,idx)=><Contact key={idx} contact={contact} />)
         }
         </tbody>
       </table>
@@ -69,4 +53,4 @@ function ContactList() {
   )
 }
 
-export default ContactList
+export default ContactList3

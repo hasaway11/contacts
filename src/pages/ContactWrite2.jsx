@@ -1,11 +1,12 @@
 import { useState } from "react"
 import { AsyncStatus } from "../utils/constants";
-import LoadingSpinner from "../components/LoadingSpinner";
 
 const titles = {name:'이름은', address:'주소는', tel:'연락처는'};
+const patterns = {name:/^[가-힣]{3,10}$/, tel:/^[0-9-]{11,13}$/, address:/^[가-힣\s]{3,10}$/}
+const messages = {name:'이름은 한글 3~10글자입니다', tel:'연락처는 정확히 입력하세요', address:'연락처는 한글 3~10글자입니다'};
 
-// 입력하지 않은 경우만 처리
-function ContactWrite() {
+// 패턴 체크 추가
+function ContactWrite2() {
   const [data, setData] = useState({name:'', address:'', tel:''});
   const [error, setError] = useState({name:'', address:'', tel:''});
   const [preview, setPreview] = useState(null);
@@ -18,16 +19,17 @@ function ContactWrite() {
 
   const handleSubmit=()=>{
     setError({name:'', address:'', tel:''});
-
-    // setError는 비동기. setError한 다음 바로 이어서 error에 접근하면 아직 변경이 안되어 있다
-    // 그래서 에러메시지를 담은 new객체를 만들어 setError하고, new객체로 에러 여부를 확인
     const newError = { name: '', address: '', tel: '' };
-    Object.keys(data).forEach(key=>{
-      if(data[key]==='') 
-        newError[key]=`${titles[key]} 필수입력입니다`
-    });
-    setError(newError);
 
+    Object.keys(data).forEach(key=>{
+      if(data[key]==='') {
+        newError[key] = `${titles[key]} 필수입력입니다`
+      } else if(!patterns[key].test(data[key])) {
+        newError[key] = messages[key];
+      } 
+    });
+
+    setError(newError);
     const isErrorExist = Object.values(newError).some(value=>value!=='');
     if(isErrorExist) {
       setStatus(AsyncStatus.IDLE);
@@ -39,8 +41,11 @@ function ContactWrite() {
   const handleBlur=(e)=>{
     const key = e.target.name;
     setError(prev=>({...prev, [key]:''}));
-    if(data[key]==='')
+    if(data[key]==='') {
       setError(prev=>({...prev,[key]:`${titles[key]} 필수입력입니다`}));
+    } else if(!patterns[key].test(data[key])) {
+      setError(prev=>({...prev,[key]:messages[key]}));
+    }
   };
 
   const handlePhotoChange=(e)=>{
@@ -49,8 +54,6 @@ function ContactWrite() {
   }
 
   const {name, address, tel} = data;
-
-  if(status===AsyncStatus.SUBMITTING) return <LoadingSpinner />
 
   return (
     <>
@@ -81,4 +84,4 @@ function ContactWrite() {
   )
 }
 
-export default ContactWrite
+export default ContactWrite2

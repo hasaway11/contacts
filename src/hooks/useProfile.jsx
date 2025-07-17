@@ -2,22 +2,20 @@ import { useState } from 'react';
 
 function useProfile() {
   const [profile, setProfile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [preview, setPreview] = useState(null);
 
-  const handleFileChange = (e) => {
+  const onChange = (e) => {
     const file = e.target.files[0];
     setProfile(file);
-
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => setPreviewUrl(reader.result);
-      reader.readAsDataURL(file);
-    } else {
-      setPreviewUrl(null);
-    }
+    setPreview(URL.createObjectURL(file));
   };
 
-  return { profile, previewUrl, handleFileChange, setPreviewUrl };
+  const reset=()=>{
+    setProfile(null);
+    setPreview(null);
+  }
+
+  return { profile, preview, onChange, reset};
 }
 
 export default useProfile

@@ -2,7 +2,7 @@ import axios from "axios";
 
 const axiosInstance = axios.create({baseURL: "https://sample.bmaster.kro.kr/" });
 
-export const readAll = (pageno, pagesize)=>axiosInstance.get(`/contacts?pageno=${pageno}&pagesize=${pagesize}`).then(data=>data);
+export const readAll = (pageno, pagesize=10)=>axiosInstance.get(`/contacts?pageno=${pageno}&pagesize=${pagesize}`).then(data=>data);
 
 export const read = (no)=>axiosInstance.get(`/contacts/${no}`);
 
